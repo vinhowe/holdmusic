@@ -39,10 +39,12 @@ if __name__ == "__main__":
 	parser = ArgumentParser()
 	parser.add_argument("-a", "--host", default="127.0.0.1", help="bind address")
 	parser.add_argument("-p", "--port", default=25565, type=int, help="bind port")
+	parser.add_argument("-m", "--max", default=65535, type=int, help="player count")
 	args = parser.parse_args()
 
 	factory = ServerFactory()
 	factory.protocol = StoneWallProtocol
+	factory.max_players = args.max
 	factory.motd = "Stonewall Server"
 	factory.online_mode = False
 
