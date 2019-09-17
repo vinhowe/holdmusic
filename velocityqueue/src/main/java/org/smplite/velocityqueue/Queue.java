@@ -2,7 +2,7 @@ package org.smplite.velocityqueue;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
-import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
@@ -41,6 +41,10 @@ public class Queue {
 	 */
 	public void flushQueue()
 	{
+		// Ignore if queue is empty
+		if (players.isEmpty())
+			return;
+
 		// Get status of target server
 		RegisteredServer targetServer = proxy.getServer(config.target).get();
 
@@ -73,10 +77,21 @@ public class Queue {
 	 * @param e
 	 */
 	@Subscribe
-	public void onServerConnected(ServerConnectedEvent e)
+	public void onServerConnect(ServerPreConnectEvent e)
 	{
-		if (e.getServer().getServerInfo().getName().equals(config.queue)) {
+		if (e.getOriginalServer().getServerInfo().getName().equals(config.queue)) {
 			// If the queue is empty and the server isn't capped, send the player through, skipping the queue.
+			if (players.isEmpty()) {
+				RegisteredServer targetServer = proxy.getServer(config.target).get();
+
+				if (targetServer.getPlayersConnected().size() < config.maxPlayers) {
+					// Don't wait, directly send
+					e.setResult(ServerPreConnectEvent.ServerResult.allowed(targetServer));
+					// We aren't creating a connection request here, we are just modifying the existing one
+					return;
+				}
+			}
+
 			// Add player to queue
 			players.add(e.getPlayer());
 			logger.info("Added to queue: " + e.getPlayer().toString());
