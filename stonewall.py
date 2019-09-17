@@ -1,6 +1,7 @@
 """
 Empty server that send the _bare_ minimum data to keep a minecraft client connected
 """
+from argparse import ArgumentParser
 from twisted.internet import reactor
 from quarry.net.server import ServerFactory, ServerProtocol
 
@@ -35,9 +36,14 @@ class StoneWallProtocol(ServerProtocol):
 		self.send_packet(self.buff_type.pack("Q", 0))
 
 if __name__ == "__main__":
+	parser = ArgumentParser()
+	parser.add_argument("-a", "--host", default="127.0.0.1", help="bind address")
+	parser.add_argument("-p", "--port", default=25565, type=int, help="bind port")
+	args = parser.parse_args()
+
 	factory = ServerFactory()
 	factory.protocol = StoneWallProtocol
 	factory.motd = "Stonewall Server"
 
-	factory.listen("127.0.0.1", 25565)
+	factory.listen(args.host, args.port)
 	reactor.run()
