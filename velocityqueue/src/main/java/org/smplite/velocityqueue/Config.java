@@ -11,6 +11,7 @@ import java.io.IOException;
 public class Config {
 	public String target = "smp";
 	public String queue = "lobby";
+	public int maxPlayers = 1;
 	public String message = "&3Position in queue: &L%position%";
 
 	/**
@@ -43,7 +44,7 @@ public class Config {
 		try {
 			config.createNewFile();
 			FileWriter fw = new FileWriter(config);
-			fw.write("{\"target\": \"smp\", \"queue\": \"lobby\", \"message\": \"&3Position in queue: &L%position%\"}");
+			fw.write("{\n\"target\": \"smp\",\n\"queue\": \"lobby\",\n\"maxPlayers\": 1,\n\"message\": \"&3Position in queue: &L%position%\"\n}");
 			fw.close();
 		} catch (IOException e) {
 			e.printStackTrace();
