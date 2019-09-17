@@ -2,8 +2,12 @@ package org.smplite.velocityqueue;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
+
+import java.io.File;
+import java.nio.file.Path;
 
 @Plugin(id = "velocityqueue",
         name = "Velocity Queue",
@@ -13,13 +17,16 @@ import org.slf4j.Logger;
 public class VelocityQueue {
     private final ProxyServer proxy;
     private final Logger logger;
+    private final Config config;
 
     @Inject
-    public VelocityQueue(ProxyServer proxy, Logger logger)
+    public VelocityQueue(ProxyServer proxy, @DataDirectory Path path, Logger logger)
     {
         this.proxy = proxy;
         this.logger = logger;
 
-        logger.info("Hello, Velocity!");
+        new File(path.toString()).mkdirs(); // Create path directories
+        this.config = Config.GetConfig(path + "/config.json");
+        logger.info(config.message);
     }
 }
