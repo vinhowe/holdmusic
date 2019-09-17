@@ -42,5 +42,8 @@ public class VelocityQueue {
 
 		// Run queue flusher
 		proxy.getScheduler().buildTask(this, queue::flushQueue).repeat(1, TimeUnit.SECONDS).schedule();
+
+		// Run updater
+		proxy.getScheduler().buildTask(this, queue::sendUpdate).repeat(15, TimeUnit.SECONDS).schedule();
 	}
 }

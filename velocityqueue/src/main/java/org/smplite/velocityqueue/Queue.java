@@ -8,12 +8,12 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.text.TextComponent;
+import net.kyori.text.format.TextColor;
 import org.slf4j.Logger;
 
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 public class Queue {
 	private  ProxyServer proxy;
@@ -54,12 +54,16 @@ public class Queue {
 				p.createConnectionRequest(targetServer).fireAndForget();
 			}
 		}
+	}
 
-		// Tell players of their queue position
-		int i = 0;
-		for (Player p : players)
-		{
-			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))));
+	/**
+	 * Tells players their queue position
+	 */
+	public void sendUpdate()
+	{
+		int i = 1;
+		for (Player p : players) {
+			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
 			i++;
 		}
 	}
