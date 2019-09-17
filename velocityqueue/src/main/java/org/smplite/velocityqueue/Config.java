@@ -17,7 +17,7 @@ public class Config {
      * Loads a config file, and if it doesn't exist creates one
      * @param filepath filepath of the config
      */
-    static Config GetConfig(String filepath)
+    static Config getConfig(String filepath)
     {
         Gson gson = new Gson();
 
@@ -26,18 +26,18 @@ public class Config {
             return gson.fromJson(fr, Config.class);
         } catch (JsonParseException e) {
             e.printStackTrace();
-            return new Config();
         } catch (IOException e) {
-            GenConfig(filepath);
-            return new Config();
+            genConfig(filepath);
         }
+
+        return new Config();
     }
 
     /**
      * Create a new config
      * @param filepath filepath of the config
      */
-    static void GenConfig(String filepath)
+    static void genConfig(String filepath)
     {
         File config = new File(filepath);
         try {
