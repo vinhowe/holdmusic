@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 @Plugin(id = "velocityqueue",
 		name = "Velocity Queue",
@@ -20,8 +21,6 @@ public class VelocityQueue {
 	private ProxyServer proxy;
 	private Logger logger;
 	private Config config;
-
-	private Queue queue;
 
 	@Inject
 	public VelocityQueue(ProxyServer proxy, @DataDirectory Path path, Logger logger)
@@ -38,7 +37,10 @@ public class VelocityQueue {
 	public void onProxyInitialize(ProxyInitializeEvent e)
 	{
 		// Create and register queue
-		this.queue = new Queue(config, logger);
-		proxy.getEventManager().register(this, this.queue);
+		Queue queue = new Queue(proxy, config, logger);
+		proxy.getEventManager().register(this, queue);
+
+		// Run queue flusher
+		proxy.getScheduler().buildTask(this, queue::flushQueue).repeat(1, TimeUnit.SECONDS).schedule();
 	}
 }
