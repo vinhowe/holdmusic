@@ -33,7 +33,7 @@ class StoneWallProtocol(ServerProtocol):
 		self.ticker.add_loop(20, self.send_keep_alive) # Keep alive packets
 
 	def send_keep_alive(self):
-		self.send_packet(self.buff_type.pack("Q", 0))
+		self.send_packet("keep_alive", self.buff_type.pack("Q", 0))
 
 if __name__ == "__main__":
 	parser = ArgumentParser()
@@ -44,6 +44,7 @@ if __name__ == "__main__":
 	factory = ServerFactory()
 	factory.protocol = StoneWallProtocol
 	factory.motd = "Stonewall Server"
+	factory.online_mode = False
 
 	factory.listen(args.host, args.port)
 	reactor.run()
