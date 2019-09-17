@@ -35,7 +35,7 @@ public class Queue {
 	@Subscribe
 	public void onServerConnected(ServerConnectedEvent e)
 	{
-		if (e.getServer().toString().equals(config.queue)) {
+		if (e.getServer().getServerInfo().getName().equals(config.queue)) {
 			// Add player to queue
 			players.add(e.getPlayer());
 			logger.info("Added to queue: " + e.getPlayer().toString());
@@ -53,7 +53,7 @@ public class Queue {
 		Optional<ServerConnection> s = p.getCurrentServer();
 		if (!s.isPresent()) return;
 
-		if (s.toString().equals(config.queue)) {
+		if (s.get().getServerInfo().getName().equals(config.queue)) {
 			// Remove player from queue
 			players.remove(p);
 			logger.info("Removed from queue: " + p.toString());
