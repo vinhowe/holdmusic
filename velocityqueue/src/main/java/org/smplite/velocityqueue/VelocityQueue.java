@@ -38,7 +38,7 @@ public class VelocityQueue {
 	public void onProxyInitialize(ProxyInitializeEvent e)
 	{
 		// Create and register queue
-		this.queue = new Queue(logger);
+		this.queue = new Queue(config, logger);
 		proxy.getEventManager().register(this, this.queue);
 	}
 }
