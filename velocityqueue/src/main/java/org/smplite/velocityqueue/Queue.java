@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.Optional;
 
 public class Queue {
-	private  ProxyServer proxy;
+	private ProxyServer proxy;
 	private Config config;
 	private Logger logger;
 
