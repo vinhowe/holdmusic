@@ -66,10 +66,10 @@ public class Queue {
 			if(priorityQueue.isEmpty() && regularQueue.isEmpty()) break;
 			if(priorityQueue.isEmpty()){
 				// Priority queue is empty
-				regularQueue.pop().createConnectionRequest(targetServer).fireAndForget();
+				regularQueue.remove().createConnectionRequest(targetServer).fireAndForget();
 			}else{
 				// Priority queue has players
-				priorityQueue.pop().createConnectionRequest(targetServer).fireAndForget();
+				priorityQueue.remove().createConnectionRequest(targetServer).fireAndForget();
 			}
 		}
 
