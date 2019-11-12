@@ -7,20 +7,25 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import me.lucko.luckperms.LuckPerms;
 import net.kyori.text.TextComponent;
 import net.kyori.text.format.TextColor;
 import org.slf4j.Logger;
+import me.lucko.luckperms.api.*;
 
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Optional;
+import java.util.*;
 
 public class Queue {
 	private ProxyServer proxy;
 	private Config config;
 	private Logger logger;
 
-	private Deque<Player> players;
+	// Singleton instance of LuckPerms api
+	LuckPermsApi luckPerms;
+
+	private Deque<Player> regularQueue;
+	private Deque<Player> priorityQueue;
+	private HashMap<Player, Integer> positionMap;
 
 	/**
 	 * Initializes a queue
@@ -33,7 +38,12 @@ public class Queue {
 		this.config = config;
 		this.logger = logger;
 
-		players = new LinkedList<Player>();
+		regularQueue = new LinkedList<Player>();
+		priorityQueue = new LinkedList<Player>();
+		positionMap = new HashMap<>();
+
+		// Loads the singleton instance of LuckPerms
+		luckPerms = LuckPerms.getApi();
 	}
 
 	/**
@@ -42,34 +52,69 @@ public class Queue {
 	public void flushQueue()
 	{
 		// Ignore if queue is empty
-		if (players.isEmpty())
-			return;
+		if (regularQueue.isEmpty() && priorityQueue.isEmpty()) return;
 
 		// Get status of target server
 		RegisteredServer targetServer = proxy.getServer(config.target).get();
 
-		if (targetServer.getPlayersConnected().size() < config.maxPlayers) {
-			// Allow players onto the server
-			int allowance = Math.min(config.maxPlayers - targetServer.getPlayersConnected().size(), players.size());
+		// Gets how many slots are available to connect, minimum amount is 0 obviously
+		int slotsAvailable = Math.max(config.maxPlayers - targetServer.getPlayersConnected().size(), 0);
 
-			for (int i = 0; i < allowance; i++) {
-				Player p = players.remove();
-
-				p.createConnectionRequest(targetServer).fireAndForget();
+		for(int i = 0; i < slotsAvailable; i++)
+		{
+			// Break loop if no one left to connect
+			if(priorityQueue.isEmpty() && regularQueue.isEmpty()) break;
+			if(priorityQueue.isEmpty()){
+				// Priority queue is empty
+				regularQueue.remove().createConnectionRequest(targetServer).fireAndForget();
+			}else{
+				// Priority queue has players
+				priorityQueue.remove().createConnectionRequest(targetServer).fireAndForget();
 			}
+		}
+
+	}
+
+	/**
+	 * Updates the queue positions saved in positionMap
+	 */
+	public void updatePositions()
+	{
+		int i = 1;
+		for(Player p : priorityQueue)
+		{
+			// Priority players queue number should never decrease
+			positionMap.put(p, i);
+			i++	;
+		}
+		for (Player p : regularQueue) {
+			// Regular players queue number might increase, only update if it has decreased from previous
+			if(positionMap.containsKey(p))
+			{
+				if(positionMap.get(p) > i) positionMap.put(p, i);
+			}else{
+				positionMap.put(p, i);
+			}
+			i++;
 		}
 	}
 
 	/**
-	 * Tells players their queue position
+	 * Send an update message to all players in the positionMap
 	 */
 	public void sendUpdate()
 	{
-		int i = 1;
-		for (Player p : players) {
-			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
-			i++;
+		for(Player p : positionMap.keySet())
+		{
+			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(positionMap.get(p)))).color(TextColor.GOLD));
 		}
+	}
+
+	/**
+	 * Checks if a player has a specified permission node through LuckPerms API
+	 */
+	public boolean hasPermission(Player player, String permission){
+		return player.hasPermission(permission);
 	}
 
 	/**
@@ -79,22 +124,30 @@ public class Queue {
 	@Subscribe
 	public void onServerConnect(ServerPreConnectEvent e)
 	{
+		RegisteredServer targetServer = proxy.getServer(config.target).get();
+
+		// Player is a staff, ignore all and connect instantly
+		if(hasPermission(e.getPlayer(), "velocityqueue.queue.staff")){
+			e.setResult(ServerPreConnectEvent.ServerResult.allowed(targetServer));
+		}
+
 		if (e.getOriginalServer().getServerInfo().getName().equals(config.queue)) {
 			// If the queue is empty and the server isn't capped, send the player through, skipping the queue.
-			if (players.isEmpty()) {
-				RegisteredServer targetServer = proxy.getServer(config.target).get();
-
-				if (targetServer.getPlayersConnected().size() < config.maxPlayers) {
+			if (priorityQueue.isEmpty() && regularQueue.isEmpty() && targetServer.getPlayersConnected().size() < config.maxPlayers) {
 					// Don't wait, directly send
 					e.setResult(ServerPreConnectEvent.ServerResult.allowed(targetServer));
 					// We aren't creating a connection request here, we are just modifying the existing one
 					return;
-				}
 			}
 
-			// Add player to queue
-			players.add(e.getPlayer());
-			logger.info("Added to queue: " + e.getPlayer().toString());
+			// Add player to respective queue, depending on permissions
+			if(hasPermission(e.getPlayer(), "velocityqueue.queue.priority")){
+				priorityQueue.add(e.getPlayer());
+				logger.info("Added to priority queue: " + e.getPlayer().toString());
+			}else{
+				regularQueue.add(e.getPlayer());
+				logger.info("Added to regular queue: " + e.getPlayer().toString());
+			}
 		}
 	}
 
@@ -111,7 +164,9 @@ public class Queue {
 
 		if (s.get().getServerInfo().getName().equals(config.queue)) {
 			// Remove player from queue
-			players.remove(p);
+			regularQueue.remove(p);
+			priorityQueue.remove(p);
+			positionMap.remove(p);
 			logger.info("Removed from queue: " + p.toString());
 		}
 	}
