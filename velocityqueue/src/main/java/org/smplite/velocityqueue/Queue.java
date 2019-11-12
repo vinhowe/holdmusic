@@ -164,8 +164,9 @@ public class Queue {
 
 		if (s.get().getServerInfo().getName().equals(config.queue)) {
 			// Remove player from queue
-			regularQueue.remove(e.getPlayer());
-			priorityQueue.remove(e.getPlayer());
+			regularQueue.remove(p);
+			priorityQueue.remove(p);
+			positionMap.remove(p);
 			logger.info("Removed from queue: " + p.toString());
 		}
 	}
