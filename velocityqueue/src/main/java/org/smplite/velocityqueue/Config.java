@@ -12,7 +12,8 @@ public class Config {
 	public String target = "smp";
 	public String queue = "lobby";
 	public int maxPlayers = 1;
-	public String message = "Position in queue: %position%";
+	public String regularMessage = "Position in queue: %position%";
+	public String priorityMessage = "Position in queue: %position%";
 
 	/**
 	 * Loads a config file, and if it doesn't exist creates one
@@ -44,7 +45,15 @@ public class Config {
 		try {
 			config.createNewFile();
 			FileWriter fw = new FileWriter(config);
-			fw.write("{\n\"target\": \"smp\",\n\"queue\": \"lobby\",\n\"maxPlayers\": 1,\n\"message\": \"Position in queue: %position%\"\n}");
+			fw.write("{\n" +
+					"\"target\":\"smp\",\n" +
+					"\"queue\": \"lobby\",\n" +
+					"\"maxPlayers\": 1,\n" +
+					"\"regularMessage\": \"Position in queue: %position%\",\n" +
+					"\"priorityMessage\": \"Thanks for supporting <insert server here>! " +
+						"Position in priority queue: %position%\"\n" +
+					"}");
+
 			fw.close();
 		} catch (IOException e) {
 			e.printStackTrace();

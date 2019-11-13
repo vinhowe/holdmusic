@@ -30,7 +30,7 @@ public class VelocityQueue {
 
 		new File(path.toString()).mkdirs(); // Create path directories
 		this.config = Config.getConfig(path + "/config.json");
-		logger.info(config.message);
+		logger.info("Loaded VelocityQueue!");
 	}
 
 	@Subscribe

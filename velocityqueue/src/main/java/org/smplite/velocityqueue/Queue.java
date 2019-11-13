@@ -70,20 +70,20 @@ public class Queue {
 	}
 
 	/**
-	 * Send an update message to all players in the positionMap
+	 * Send an update message to all players in queue(s)
 	 */
 	public void sendUpdate()
 	{
 		int i = 1;
 		for (Player p : priorityQueue) {
-			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
+			p.sendMessage(TextComponent.of(config.priorityMessage.replaceAll("%position%", Integer.toString(i))).color(TextColor.GREEN));
 			i++	;
 		}
 
 		// Reset for regular queue so it doesn't seem like they're positions have changed
 		i = 1;
 		for (Player p : regularQueue) {
-			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
+			p.sendMessage(TextComponent.of(config.regularMessage.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
 			i++;
 		}
 	}
@@ -91,7 +91,7 @@ public class Queue {
 	/**
 	 * Checks if a player has a specified permission node through LuckPerms API
 	 */
-	public boolean hasPermission(Player player, String permission){
+	public boolean hasPermission(Player player, String permission) {
 		return player.hasPermission(permission);
 	}
 
@@ -105,8 +105,10 @@ public class Queue {
 		RegisteredServer targetServer = proxy.getServer(config.target).get();
 
 		// Player is a staff, ignore all and connect instantly
-		if (hasPermission(e.getPlayer(), "velocityqueue.queue.staff")) {
+		Player p = e.getPlayer();
+		if (hasPermission(p, "velocityqueue.queue.staff")) {
 			e.setResult(ServerPreConnectEvent.ServerResult.allowed(targetServer));
+			p.sendMessage(TextComponent.of("Zoom!").color(TextColor.AQUA));
 			return;
 		}
 
@@ -120,12 +122,12 @@ public class Queue {
 			}
 
 			// Add player to respective queue, depending on permissions
-			if (hasPermission(e.getPlayer(), "velocityqueue.queue.priority")) {
-				priorityQueue.add(e.getPlayer());
-				logger.info("Added to priority queue: " + e.getPlayer().toString());
+			if (hasPermission(p, "velocityqueue.queue.priority")) {
+				priorityQueue.add(p);
+				logger.info("Added to priority queue: " + p.toString());
 			} else {
-				regularQueue.add(e.getPlayer());
-				logger.info("Added to regular queue: " + e.getPlayer().toString());
+				regularQueue.add(p);
+				logger.info("Added to regular queue: " + p.toString());
 			}
 		}
 	}
