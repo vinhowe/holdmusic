@@ -75,7 +75,7 @@ public class Queue {
 	public void sendUpdate()
 	{
 		int i = 1;
-		for(Player p : priorityQueue) {
+		for (Player p : priorityQueue) {
 			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
 			i++	;
 		}
@@ -105,8 +105,9 @@ public class Queue {
 		RegisteredServer targetServer = proxy.getServer(config.target).get();
 
 		// Player is a staff, ignore all and connect instantly
-		if(hasPermission(e.getPlayer(), "velocityqueue.queue.staff")){
+		if (hasPermission(e.getPlayer(), "velocityqueue.queue.staff")) {
 			e.setResult(ServerPreConnectEvent.ServerResult.allowed(targetServer));
+			return;
 		}
 
 		if (e.getOriginalServer().getServerInfo().getName().equals(config.queue)) {
@@ -119,10 +120,10 @@ public class Queue {
 			}
 
 			// Add player to respective queue, depending on permissions
-			if(hasPermission(e.getPlayer(), "velocityqueue.queue.priority")){
+			if (hasPermission(e.getPlayer(), "velocityqueue.queue.priority")) {
 				priorityQueue.add(e.getPlayer());
 				logger.info("Added to priority queue: " + e.getPlayer().toString());
-			}else{
+			} else {
 				regularQueue.add(e.getPlayer());
 				logger.info("Added to regular queue: " + e.getPlayer().toString());
 			}
