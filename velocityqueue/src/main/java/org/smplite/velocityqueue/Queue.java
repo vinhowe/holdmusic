@@ -25,7 +25,6 @@ public class Queue {
 
 	private Deque<Player> regularQueue;
 	private Deque<Player> priorityQueue;
-	private HashMap<Player, Integer> positionMap;
 
 	/**
 	 * Initializes a queue
@@ -40,7 +39,6 @@ public class Queue {
 
 		regularQueue = new LinkedList<>();
 		priorityQueue = new LinkedList<>();
-		positionMap = new HashMap<>();
 
 		// Loads the singleton instance of LuckPerms
 		luckPerms = LuckPerms.getApi();
@@ -62,41 +60,12 @@ public class Queue {
 
 		for(int i = 0; i < slotsAvailable; i++)
 		{
-			// Break loop if no one left to connect
-			if(priorityQueue.isEmpty() && regularQueue.isEmpty()) break;
-			if(priorityQueue.isEmpty()){
-				// Priority queue is empty
-				regularQueue.remove().createConnectionRequest(targetServer).fireAndForget();
-			}else{
-				// Priority queue has players
+			if (!priorityQueue.isEmpty())
 				priorityQueue.remove().createConnectionRequest(targetServer).fireAndForget();
-			}
-		}
-
-		updatePositions();
-	}
-
-	/**
-	 * Updates the queue positions saved in positionMap
-	 */
-	public void updatePositions()
-	{
-		int i = 1;
-		for(Player p : priorityQueue)
-		{
-			// Priority players queue number should never decrease
-			positionMap.put(p, i);
-			i++	;
-		}
-		for (Player p : regularQueue) {
-			// Regular players queue number might increase, only update if it has decreased from previous
-			if(positionMap.containsKey(p))
-			{
-				if(positionMap.get(p) > i) positionMap.put(p, i);
-			}else{
-				positionMap.put(p, i);
-			}
-			i++;
+			else if (!regularQueue.isEmpty())
+				regularQueue.remove().createConnectionRequest(targetServer).fireAndForget();
+			else
+				break;
 		}
 	}
 
@@ -105,9 +74,17 @@ public class Queue {
 	 */
 	public void sendUpdate()
 	{
-		for(Player p : positionMap.keySet())
-		{
-			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(positionMap.get(p)))).color(TextColor.GOLD));
+		int i = 1;
+		for(Player p : priorityQueue) {
+			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
+			i++	;
+		}
+
+		// Reset for regular queue so it doesn't seem like they're positions have changed
+		i = 1;
+		for (Player p : regularQueue) {
+			p.sendMessage(TextComponent.of(config.message.replaceAll("%position%", Integer.toString(i))).color(TextColor.GOLD));
+			i++;
 		}
 	}
 
@@ -149,8 +126,6 @@ public class Queue {
 				regularQueue.add(e.getPlayer());
 				logger.info("Added to regular queue: " + e.getPlayer().toString());
 			}
-
-			updatePositions();
 		}
 	}
 
@@ -169,10 +144,7 @@ public class Queue {
 			// Remove player from queue
 			regularQueue.remove(p);
 			priorityQueue.remove(p);
-			positionMap.remove(p);
 			logger.info("Removed from queue: " + p.toString());
-
-			updatePositions();
 		}
 	}
 }
