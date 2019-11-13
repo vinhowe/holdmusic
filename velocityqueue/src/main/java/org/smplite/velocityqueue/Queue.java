@@ -21,7 +21,7 @@ public class Queue {
 	private Logger logger;
 
 	// Singleton instance of LuckPerms api
-	LuckPermsApi luckPerms;
+	private LuckPermsApi luckPerms;
 
 	private Deque<Player> regularQueue;
 	private Deque<Player> priorityQueue;
@@ -38,8 +38,8 @@ public class Queue {
 		this.config = config;
 		this.logger = logger;
 
-		regularQueue = new LinkedList<Player>();
-		priorityQueue = new LinkedList<Player>();
+		regularQueue = new LinkedList<>();
+		priorityQueue = new LinkedList<>();
 		positionMap = new HashMap<>();
 
 		// Loads the singleton instance of LuckPerms
@@ -73,6 +73,7 @@ public class Queue {
 			}
 		}
 
+		updatePositions();
 	}
 
 	/**
@@ -148,6 +149,8 @@ public class Queue {
 				regularQueue.add(e.getPlayer());
 				logger.info("Added to regular queue: " + e.getPlayer().toString());
 			}
+
+			updatePositions();
 		}
 	}
 
@@ -168,6 +171,8 @@ public class Queue {
 			priorityQueue.remove(p);
 			positionMap.remove(p);
 			logger.info("Removed from queue: " + p.toString());
+
+			updatePositions();
 		}
 	}
 }
