@@ -134,35 +134,35 @@ hs_err_pid*
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 # User-specific stuff
-velocityqueue/.idea/**/workspace.xml
-velocityqueue/.idea/**/tasks.xml
-velocityqueue/.idea/**/usage.statistics.xml
-velocityqueue/.idea/**/dictionaries
-velocityqueue/.idea/**/shelf
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
 
 # Generated files
-velocityqueue/.idea/**/contentModel.xml
+.idea/**/contentModel.xml
 
 # Sensitive or high-churn files
-velocityqueue/.idea/**/dataSources/
-velocityqueue/.idea/**/dataSources.ids
-velocityqueue/.idea/**/dataSources.local.xml
-velocityqueue/.idea/**/sqlDataSources.xml
-velocityqueue/.idea/**/dynamic.xml
-velocityqueue/.idea/**/uiDesigner.xml
-velocityqueue/.idea/**/dbnavigator.xml
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
 
 # Gradle
-velocityqueue/.idea/**/gradle.xml
-velocityqueue/.idea/**/libraries
+.idea/**/gradle.xml
+.idea/**/libraries
 
 # Gradle and Maven with auto-import
 # When using Gradle or Maven with auto-import, you should exclude module files,
 # since they will be recreated, and may cause churn.  Uncomment if using
 # auto-import.
-velocityqueue/.idea/modules.xml
-velocityqueue/.idea/*.iml
-velocityqueue/.idea/modules
+.idea/modules.xml
+.idea/*.iml
+.idea/modules
 *.iml
 *.ipr
 
@@ -170,7 +170,7 @@ velocityqueue/.idea/modules
 cmake-build-*/
 
 # Mongo Explorer plugin
-velocityqueue/.idea/**/mongoSettings.xml
+.idea/**/mongoSettings.xml
 
 # File-based project format
 *.iws
@@ -179,13 +179,13 @@ velocityqueue/.idea/**/mongoSettings.xml
 out/
 
 # mpeltonen/sbtvelocityqueue/.idea plugin
-velocityqueue/.idea_modules/
+.idea_modules/
 
 # JIRA plugin
 atlassian-ide-plugin.xml
 
 # Cursive Clojure plugin
-velocityqueue/.idea/replstate.xml
+.idea/replstate.xml
 
 # Crashlytics plugin (for Android Studio and IntelliJ)
 com_crashlytics_export_strings.xml
@@ -194,9 +194,14 @@ crashlytics-build.properties
 fabric.properties
 
 # Editor-based Rest Client
-velocityqueue/.idea/httpRequests
+.idea/httpRequests
 
 # Android studio 3.1+ serialized cache file
-velocityqueue/.idea/caches/build_file_checksums.ser
+.idea/caches/build_file_checksums.ser
 
-### SMPLite Stuff
+.idea/
+
+.gradle/
+gradlew
+gradlew.bat
+gradle/

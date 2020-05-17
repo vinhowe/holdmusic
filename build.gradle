@@ -1,0 +1,42 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.3.72"
+    id "org.jetbrains.kotlin.kapt" version "1.3.72"
+    id "java-library"
+    id "maven"
+}
+
+group = 'vin.howe.holdmusic'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    maven {
+        name 'velocity'
+        url 'https://repo.velocitypowered.com/snapshots/'
+    }
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.72"
+    implementation 'com.velocitypowered:velocity-api:1.0.0-SNAPSHOT'
+    kapt 'com.velocitypowered:velocity-api:1.0.0-SNAPSHOT'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+// We need to make an "uber" jar: https://docs.gradle.org/current/userguide/working_with_files.html#sec:creating_uber_jar_example
+// because the Kotlin std isn't in Velocity--I think
+jar {
+    from sourceSets.main.output
+
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+}
