@@ -13,11 +13,6 @@ import java.util.*
 class LoadingManager(private val proxy: ProxyServer, private val config: Config, private val logger: Logger) {
     private val queue: Deque<Player>
 
-    companion object {
-        private const val MANAGER_URL = "http://127.0.0.1:5000"
-        private const val MANAGER_ENDPOINT_CALL = "$MANAGER_URL/call"
-    }
-
     /**
      * Let everyone into the server when it loads
      */
