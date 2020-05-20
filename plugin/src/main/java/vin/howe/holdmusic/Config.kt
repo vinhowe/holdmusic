@@ -9,7 +9,6 @@ import java.io.FileWriter
 import java.io.IOException
 
 class Config {
-    var target = "server"
     var queue = "holding"
 
     companion object {
@@ -44,8 +43,7 @@ class Config {
                 val fileWriter = FileWriter(config)
                 fileWriter.write("""
                 {
-                "target":"holding",
-                "queue": "server",
+                "queue": "holding",
                 }
                 """.trimIndent())
                 fileWriter.close()
