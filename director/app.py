@@ -27,7 +27,8 @@ def poke_server() -> Tuple[Optional[str], bool]:
         # noinspection PyBroadException
         try:
             instances.start(**config).execute()
-        except:
+        except Exception as e:
+            print(e)
             pass
         finally:
             return None, None

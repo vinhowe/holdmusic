@@ -21,7 +21,7 @@ class HoldMusic @Inject constructor(private val proxy: ProxyServer, @DataDirecto
     fun onProxyInitialize(e: ProxyInitializeEvent?) {
         val queue = LoadingManager(proxy, config, logger)
         proxy.eventManager.register(this, queue)
-        proxy.scheduler.buildTask(this) { queue.updateHoldMusic() }.repeat(1, TimeUnit.SECONDS).schedule()
+        proxy.scheduler.buildTask(this) { queue.updateHoldMusic() }.repeat(5, TimeUnit.SECONDS).schedule()
         proxy.scheduler.buildTask(this) { queue.sendUpdate() }.repeat(15, TimeUnit.SECONDS).schedule()
     }
 

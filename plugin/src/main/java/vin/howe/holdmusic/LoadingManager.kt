@@ -32,8 +32,7 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
             return
         }
 
-        queue.forEach { it.createConnectionRequest(proxy.getServer(SERVER_NAME).get()).fireAndForget() }
-        queue.clear()
+        queue.forEach { player -> player.createConnectionRequest(proxy.getServer(SERVER_NAME).get()).connect().thenAccept{ queue.remove(player) } }
     }
 
     /**
