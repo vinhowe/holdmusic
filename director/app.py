@@ -2,19 +2,23 @@ import json
 from typing import Dict, Union, Optional, Tuple
 from googleapiclient import discovery
 from flask import Flask
+from google.cloud import datastore
 from mcstatus import MinecraftServer
+
+compute = discovery.build("compute", "v1")
+instances = compute.instances()
+datastore_client = datastore.Client()
 
 app = Flask(__name__)
 
-config = None
 with open("config.json") as config_file:
+    global config
+    # noinspection PyRedeclaration
     config = json.load(config_file)
 
 
 def poke_server() -> Tuple[Optional[str], bool]:
     global config
-    compute = discovery.build("compute", "v1")
-    instances = compute.instances()
     online = False
     ip = None
 
@@ -46,11 +50,30 @@ def poke_server() -> Tuple[Optional[str], bool]:
     return ip, online
 
 
-@app.route("/call")
-def call() -> Dict[str, str]:
+@app.route("/poke")
+def poke() -> Dict[str, str]:
     ip, online = poke_server()
     status = "online" if online else "offline"
     return {"status": status, "url": ip}
+
+
+@app.route("/eligible/<uuid>")
+def check_eligible(uuid) -> Dict[str, str]:
+    kind = 'accounts'
+
+    task_key = datastore_client.key(kind, uuid)
+
+    eligible = False
+
+    entity = datastore_client.get(task_key)
+
+    exists = entity is not None
+
+    if exists and "eligible" in entity:
+        eligible = entity["eligible"]
+
+    return {"eligible": eligible, "exists": exists}
+
 
 
 if __name__ == "__main__":
