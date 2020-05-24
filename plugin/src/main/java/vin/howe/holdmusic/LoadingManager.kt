@@ -6,9 +6,12 @@ import com.velocitypowered.api.event.player.ServerPreConnectEvent
 import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.server.ServerInfo
-import com.velocitypowered.api.proxy.server.ServerPing
 import net.kyori.text.TextComponent
 import org.slf4j.Logger
+import vin.howe.holdmusic.director.CheckEligibleResponse
+import vin.howe.holdmusic.director.DirectorManager
+import vin.howe.holdmusic.director.PokeResponse
+import java.lang.Exception
 import java.net.InetSocketAddress
 import java.util.*
 
@@ -32,7 +35,7 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
             return
         }
 
-        queue.forEach { player -> player.createConnectionRequest(proxy.getServer(SERVER_NAME).get()).connect().thenAccept{ queue.remove(player) } }
+        queue.forEach { player -> player.createConnectionRequest(proxy.getServer(SERVER_NAME).get()).connect().thenAccept { queue.remove(player) } }
     }
 
     /**
@@ -51,6 +54,27 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
      */
     @Subscribe
     fun onServerConnect(event: ServerPreConnectEvent) {
+        val eligibility: CheckEligibleResponse
+
+        try {
+            eligibility = manager.checkEligible(event.player.uniqueId.toString()).join()
+        } catch (e: Exception) {
+            logger.error("checkEligible failed:")
+            logger.error(e.toString())
+            event.player.disconnect(TextComponent.of("Unable to verify eligibility for ${event.player.username} (${event.player.uniqueId}). This is likely a server error."))
+            return
+        }
+
+        if (!eligibility.exists) {
+            event.player.disconnect(TextComponent.of("${event.player.username} (${event.player.uniqueId}) is not registered. Contact the server admin for more information."))
+            return
+        }
+
+        if (!eligibility.eligible) {
+            event.player.disconnect(TextComponent.of("${event.player.username} (${event.player.uniqueId}) is not currently eligible. Contact the server admin for more information."))
+            return
+        }
+
         if (attemptConnect(SERVER_NAME, proxy)) {
             event.result = ServerPreConnectEvent.ServerResult.allowed(proxy.getServer(SERVER_NAME).get());
             return
@@ -68,7 +92,16 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
         val targetServerOptional = proxy.getServer(serverName)
         val serverRegistered = targetServerOptional.isPresent
 
-        val managerResponse = manager.call().join()
+        val managerResponse: PokeResponse
+        try {
+            managerResponse = manager.poke().join()
+        } catch (e: Exception) {
+            logger.error("attemptConnect failed:")
+            logger.error(e.toString())
+            println(e)
+            return false
+        }
+
         val serverOnline = managerResponse.status == ServerStatus.ONLINE.status
 
         if (!serverOnline) return serverOnline
