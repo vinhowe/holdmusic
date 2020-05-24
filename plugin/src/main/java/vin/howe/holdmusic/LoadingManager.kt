@@ -11,7 +11,7 @@ import org.slf4j.Logger
 import vin.howe.holdmusic.director.CheckEligibleResponse
 import vin.howe.holdmusic.director.DirectorManager
 import vin.howe.holdmusic.director.PokeResponse
-import java.lang.Exception
+import vin.howe.holdmusic.director.ServerStatus
 import java.net.InetSocketAddress
 import java.util.*
 
@@ -137,8 +137,3 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
     }
 }
 
-enum class ServerStatus(val status: String) {
-    OFFLINE("offline"),
-    LOADING("loading"),
-    ONLINE("online"),
-}
