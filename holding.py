@@ -24,7 +24,7 @@ class HoldMusicProtocol(ServerProtocol):
     song_start = None
     music_bar_uuid = None
     playing_music = True
-    registry = LookupRegistry.from_json(reports_path="../../reports")
+    registry = LookupRegistry.from_json(reports_path="../reports")
     experience = 1
 
     def __init__(self, factory, remote_addr):

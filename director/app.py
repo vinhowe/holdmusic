@@ -6,15 +6,17 @@ from mcstatus import MinecraftServer
 
 app = Flask(__name__)
 
+config = None
+with open("config.json") as config_file:
+    config = json.load(config_file)
+
 
 def poke_server() -> Tuple[Optional[str], bool]:
+    global config
     compute = discovery.build("compute", "v1")
     instances = compute.instances()
     online = False
     ip = None
-
-    with open("config.json") as config_file:
-        config = json.load(config_file)
 
     instance = None
     # noinspection PyBroadException
