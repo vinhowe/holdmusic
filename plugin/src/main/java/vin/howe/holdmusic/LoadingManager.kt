@@ -79,6 +79,9 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
             logger.info("\"$SERVER_NAME\" building and registering server")
 
             server = newServer
+            if (proxy.getServer(SERVER_NAME).isPresent) {
+                proxy.unregisterServer(proxy.getServer(SERVER_NAME).get().serverInfo)
+            }
             proxy.registerServer(newServer)
         }
         return true
