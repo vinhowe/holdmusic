@@ -8,14 +8,11 @@ import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.server.ServerInfo
 import net.kyori.text.TextComponent
 import org.slf4j.Logger
-import vin.howe.holdmusic.director.CheckEligibleResponse
-import vin.howe.holdmusic.director.DirectorManager
-import vin.howe.holdmusic.director.PokeResponse
-import vin.howe.holdmusic.director.ServerStatus
+import vin.howe.holdmusic.director.*
 import java.net.InetSocketAddress
 import java.util.*
 
-class LoadingManager(private val proxy: ProxyServer, private val config: Config, private val logger: Logger) {
+class Manager(private val proxy: ProxyServer, private val config: Config, private val logger: Logger) {
     private val queue: Deque<Player> = LinkedList()
     private val manager = DirectorManager()
     private var server: ServerInfo? = null
@@ -23,6 +20,27 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
     companion object {
         private const val SERVER_NAME = "play"
         private const val SERVER_PORT = 25565
+    }
+
+    /**
+     * Tell director who's on right now
+     */
+    fun updateUsage() {
+        if (proxy.playerCount == 0) {
+            return
+        }
+
+        val uuids = proxy.allPlayers.map { it.uniqueId }
+
+//        val status: StatusResponse
+        try {
+//            status = manager.reportUsage(uuids).join()
+            manager.reportUsage(uuids).join()
+        } catch (e: Exception) {
+            logger.error(e.toString())
+        }
+
+        logger.info("Logged usage: ${proxy.playerCount} online now")
     }
 
     /**
@@ -41,7 +59,7 @@ class LoadingManager(private val proxy: ProxyServer, private val config: Config,
     /**
      * Send an update message to all players in queue
      */
-    fun sendUpdate() {
+    fun sendLoadingMessage() {
         for (player in queue) {
             player.sendMessage(TextComponent.of("Server loading... hang tight!"))
         }
