@@ -1,7 +1,8 @@
 import json
+from datetime import datetime
 from typing import Dict, Union, Optional, Tuple
 from googleapiclient import discovery
-from flask import Flask
+from flask import Flask, request
 from google.cloud import datastore
 from mcstatus import MinecraftServer
 
@@ -57,23 +58,40 @@ def poke() -> Dict[str, str]:
     return {"status": status, "url": ip}
 
 
-@app.route("/eligible/<uuid>")
+@app.route("/eligible/<uuid>", methods=["GET"])
 def check_eligible(uuid) -> Dict[str, str]:
-    kind = 'accounts'
-
+    kind = 'Account'
     task_key = datastore_client.key(kind, uuid)
+    entity = datastore_client.get(task_key)
+    exists = entity is not None
 
     eligible = False
-
-    entity = datastore_client.get(task_key)
-
-    exists = entity is not None
 
     if exists and "eligible" in entity:
         eligible = entity["eligible"]
 
     return {"eligible": eligible, "exists": exists}
 
+
+@app.route("/usage", methods=["POST"])
+def report_usage() -> Dict[str, str]:
+    kind = 'Usage'
+    request_data = request.get_json()
+
+    if 'uuids' not in request_data or request_data is None:
+        return {"response": "error"}
+
+    online = request_data["uuids"]
+
+    usage_key = datastore_client.key(kind)
+
+    usage_entity = datastore.Entity(key=usage_key)
+    usage_entity["date"] = datetime.utcnow()
+    usage_entity["online"] = online
+
+    datastore_client.put(usage_entity)
+
+    return {"response": "ok"}
 
 
 if __name__ == "__main__":
