@@ -4,7 +4,17 @@ from typing import Union, Dict, Optional, List
 
 from quarry.types.buffer import Buffer
 from quarry.types.chunk import PackedArray, BlockArray
-from quarry.types.nbt import TagRoot, TagCompound, TagLongArray, TagString, TagList
+from quarry.types.nbt import (
+    TagRoot,
+    TagCompound,
+    TagLongArray,
+    TagString,
+    TagList,
+    TagInt,
+    TagByte,
+    TagFloat,
+    TagLong,
+)
 from quarry.types.registry import LookupRegistry
 from twisted.internet import reactor
 from quarry.net.server import ServerFactory, ServerProtocol
@@ -35,28 +45,137 @@ class HoldMusicProtocol(ServerProtocol):
         # Call super. This switches us to "play" mode, marks the player as
         #   in-game, and does some logging.
         ServerProtocol.player_joined(self)
+        print(self.protocol_version)
 
         # Send "Join Game" packet
-        self.send_packet(
-            "join_game",
-            self.buff_type.pack(
-                "iBqiB",
-                1,  # entity id
-                2,  # game mode
-                1,  # dimension
-                0,  # hashed seed
-                0,
-            ),  # max players
-            self.buff_type.pack_string("flat"),  # level type
-            self.buff_type.pack_varint(3),  # view distance
-            self.buff_type.pack("??", False, True),  # reduced debug info
-        )  # show respawn screen
+        dim_name = "minecraft:the_end"
+
+        if self.protocol_version > 736:  # Minecraft 1.16.2
+            # Send "Join Game" packet
+            biome_codec = TagCompound(
+                {
+                    "type": TagString("minecraft:worldgen/biome"),
+                    "value": TagList(
+                        [
+                            TagCompound(
+                                {
+                                    "name": TagString(
+                                        "minecraft:plains"
+                                    ),  # Client crashes if you do not define plains
+                                    "id": TagInt(1),
+                                    "element": TagCompound(
+                                        {
+                                            "precipitation": TagString("none"),
+                                            "effects": TagCompound(
+                                                {
+                                                    "sky_color": TagInt(0xFFFFFF),
+                                                    "water_fog_color": TagInt(0),
+                                                    "fog_color": TagInt(0xFFFFFF),
+                                                    "water_color": TagInt(0),
+                                                }
+                                            ),
+                                            "depth": TagFloat(0.5),
+                                            "temperature": TagFloat(1),
+                                            "scale": TagFloat(0.2),
+                                            "downfall": TagFloat(0.5),
+                                            "category": TagString("plains"),
+                                        }
+                                    ),
+                                }
+                            )
+                        ]
+                    ),
+                }
+            )
+            dim_settings = TagCompound(
+                {
+                    "natural": TagByte(1),
+                    "ambient_light": TagFloat(1.0),
+                    "has_ceiling": TagByte(0),
+                    "has_skylight": TagByte(1),
+                    "fixed_time": TagLong(9000),
+                    "ultrawarm": TagByte(0),
+                    "has_raids": TagByte(0),
+                    "respawn_anchor_works": TagByte(0),
+                    "bed_works": TagByte(0),
+                    "piglin_safe": TagByte(0),
+                    "logical_height": TagInt(256),
+                    "infiniburn": TagString("minecraft:infiniburn_overworld"),
+                    "coordinate_scale": TagFloat(1.0),
+                }
+            )
+            dim_codec = TagRoot(
+                {
+                    "": TagCompound(
+                        {
+                            "minecraft:dimension_type": TagCompound(
+                                {
+                                    "type": TagString("minecraft:dimension_type"),
+                                    "value": TagList(
+                                        [
+                                            TagCompound(
+                                                {
+                                                    "name": TagString(dim_name),
+                                                    "id": TagInt(0),
+                                                    "element": dim_settings,
+                                                }
+                                            ),
+                                        ]
+                                    ),
+                                }
+                            ),
+                            "minecraft:worldgen/biome": biome_codec,
+                        }
+                    )
+                }
+            )
+            current_dim = TagRoot(
+                {
+                    "": dim_settings,
+                }
+            )
+
+            self.send_packet(
+                "join_game",
+                self.buff_type.pack(
+                    "i?BB", 0, False, 3, 3
+                ),  # entity id, hardcore, game mode, previous game mode
+                self.buff_type.pack_varint(1),  # world count
+                self.buff_type.pack_string(dim_name),  # world name(s)
+                self.buff_type.pack_nbt(dim_codec),  # dimension registry
+                self.buff_type.pack_nbt(current_dim),  # current dimension
+                self.buff_type.pack_string(dim_name),  # world name
+                self.buff_type.pack("q", 42),  # hashed seed
+                self.buff_type.pack_varint(0),  # max players (unused)
+                self.buff_type.pack_varint(2),  # view distance
+                self.buff_type.pack("????", True, True, False, True),
+            )  # respawn screen, debug world, flat world
+        # self.send_packet(
+        #     "join_game",
+        #     self.buff_type.pack(
+        #         "i?Bb",
+        #         1,  # entity id
+        #         False,
+        #         2,  # game mode
+        #         -1, # previous game mode
+        #     ),
+        #     self.buff_type.pack_varint(1),  # world count
+        #     self.buff_type.pack_string("minecraft:the_end"), # world identifiers
+        #     # self.buff_type.pack("qiB", )
+        #     self.buff_type.pack_nbt(TagRoot({})), # dimension codec
+        #     self.buff_type.pack_nbt(TagRoot({})), # dimension
+        #     self.buff_type.pack_string("holdmusic"), # world identifiers
+        #     self.buff_type.pack("L", 12345678),
+        #     self.buff_type.pack_varint(0),
+        #     self.buff_type.pack_varint(3),  # view distance
+        #     self.buff_type.pack("????", False, True, False, False),  # reduced debug info
+        # )  # show respawn screen
 
         for x in range(-7, 8):
             for y in range(-7, 8):
                 self.send_air_chunk(x, y)
 
-        # self.send_air_chunk(1, 1)
+        self.send_air_chunk(1, 1)
 
         # Send "Player Position and Look" packet
         self.send_packet(
@@ -73,22 +192,24 @@ class HoldMusicProtocol(ServerProtocol):
 
         # Send "Player Abilities" packet
         self.send_packet(
-            "player_abilities", self.buff_type.pack("bff", 0b01111, 0.2, 0.1),
+            "player_abilities",
+            self.buff_type.pack("bff", 0b01111, 0.2, 0.1),
         )
 
         # Send "Server Difficulty" packet
         self.send_packet(
-            "server_difficulty", self.buff_type.pack("B?", 3, False),
+            "server_difficulty",
+            self.buff_type.pack("B?", 3, False),
         )
 
         # Send "World Border" packet
-        self.send_packet(
-            "world_border",
-            self.buff_type.pack_varint(0),
-            self.buff_type.pack("d", 100),
-        )
+        # self.send_packet(
+        #     "world_border",
+        #     self.buff_type.pack_varint(0),
+        #     self.buff_type.pack("d", 100),
+        # )
 
-        # # Send "Server Difficulty" packet
+        # Send "Server Difficulty" packet
         # self.send_packet(
         #     "chat_message",
         #     self.buff_type.pack_chat(Message({"text": "Playing Stal -- C418", "color": "red"})) + self.buff_type.pack("B", 0),
@@ -127,30 +248,30 @@ class HoldMusicProtocol(ServerProtocol):
         # items[6] = "minecraft:elytra"
         # items[36:45] = ["minecraft:firework_rocket" for _ in range(36, 45)]
 
-        self.send_packet(
-            "window_items",
-            self.buff_type.pack("Bh", 0, 46),
-            *[self.buff_type.pack_slot(*item) for item in items]
-        )
+        # self.send_packet(
+        #     "window_items",
+        #     self.buff_type.pack("Bh", 0, 46),
+        #     *[self.buff_type.pack_slot(*item) for item in items]
+        # )
 
-        self.send_packet("open_book", self.buff_type.pack_varint(0))
+        # self.send_packet("open_book", self.buff_type.pack_varint(0))
 
         self.update_music(create=True)
 
-        for player in self.factory.players:
-            player.send_packet(
-                "player_list_item",
-                self.buff_type.pack_varint(0),  # action
-                self.buff_type.pack_varint(1),  # count
-                self.buff_type.pack_uuid(self.uuid),  # uuid
-                self.buff_type.pack_string(self.display_name),  # name
-                self.buff_type.pack_varint(
-                    0
-                ),  # properties count (not really sure what to do with this)
-                self.buff_type.pack_varint(0),  # gamemode (survival = 0)
-                self.buff_type.pack_varint(0),  # ping (in ms)
-                self.buff_type.pack("?", False),  # Has Display Name
-            )
+        # for player in self.factory.players:
+        #     player.send_packet(
+        #         "player_list_item",
+        #         self.buff_type.pack_varint(0),  # action
+        #         self.buff_type.pack_varint(1),  # count
+        #         self.buff_type.pack_uuid(self.uuid),  # uuid
+        #         self.buff_type.pack_string(self.display_name),  # name
+        #         self.buff_type.pack_varint(
+        #             0
+        #         ),  # properties count (not really sure what to do with this)
+        #         self.buff_type.pack_varint(0),  # gamemode (survival = 0)
+        #         self.buff_type.pack_varint(0),  # ping (in ms)
+        #         self.buff_type.pack("?", False),  # Has Display Name
+        #     )
 
         # Start sending "Keep Alive" packets
         self.ticker.add_loop(20, self.update_keep_alive)
@@ -158,7 +279,7 @@ class HoldMusicProtocol(ServerProtocol):
         self.ticker.add_loop(2, self.send_position_update)
 
         # Announce player joined
-        self.factory.send_chat(u"\u00a7e%s has joined." % self.display_name)
+        # self.factory.send_chat(u"\u00a7e%s has joined." % self.display_name)
 
     def player_left(self):
         ServerProtocol.player_left(self)
@@ -203,7 +324,7 @@ class HoldMusicProtocol(ServerProtocol):
             # Play "Stal" by C418
             self.send_packet(
                 "sound_effect",
-                self.buff_type.pack_varint(557),
+                self.buff_type.pack_varint(474),
                 self.buff_type.pack_varint(2),
                 self.buff_type.pack(
                     "iiiff",
@@ -289,7 +410,10 @@ class HoldMusicProtocol(ServerProtocol):
             self.buff_type.pack("ii?", x, z, True),
             self.buff_type.pack_chunk_bitmask(sections),
             self.buff_type.pack_nbt(heightmap),  # added in 1.14
-            self.buff_type.pack_array("I", biomes),
+            self.buff_type.pack_varint(0),
+            b"",
+            # b"".join(self.buff_type.pack_varint(biome) for biome in biomes),
+            # self.buff_type.pack_array("I", biomes),
             self.buff_type.pack_varint(len(sections_data)),
             sections_data,
             self.buff_type.pack_varint(len(block_entities)),
@@ -355,12 +479,12 @@ class HoldMusicFactory(ServerFactory):
     protocol = HoldMusicProtocol
     motd = "HoldMusic holding room"
 
-    def send_chat(self, message):
+    def send_chat(self, message, sender=UUID(int=0)):
         for player in self.players:
-            player.send_packet(
-                "chat_message",
-                player.buff_type.pack_chat(message) + player.buff_type.pack("B", 0),
-            )
+            data = player.buff_type.pack_chat(message) + player.buff_type.pack("B", 0)
+            if player.protocol_version > 578:
+                data += player.buff_type.pack_uuid(sender)
+            player.send_packet("chat_message", data)
 
 
 def main(argv):
